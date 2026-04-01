@@ -154,13 +154,7 @@ created_at          risk_tier
 
 ### Risk Evaluation
 
-The evaluation logic lives in `services/risk_evaluator.py` and is intentionally isolated from the rest of the system. Currently it simulates scores using randomness, but the interface is designed to be swapped out for a real scoring model like an MCP server. Our server calls Claude using MCP tools to verify the ein, assess the financial health, calculate the risk score, and store it in the risks table.
-
----
-
-### Deploying onto the cloud
-
-Since we're using Docker we can host on Cloud Run. It's fully managed so it takes care of the containers, scaling, no need to manage the cluster. We could use Cloud SQL as our managed database.
+The evaluation logic lives in `services/risk_evaluator.py` and is intentionally isolated from the rest of the system. Currently it simulates scores using randomness, but the interface is designed to be swapped out for a real scoring model — for example, an MCP server where Claude calls tools to verify the EIN, assess financial health, and produce a structured risk result.
 
 ---
 
@@ -168,10 +162,12 @@ Since we're using Docker we can host on Cloud Run. It's fully managed so it take
 
 **FastAPI** — required by the spec. Its automatic OpenAPI docs (`/docs`) made iterating on the API much faster during development, and Pydantic integration means request validation is handled declaratively with no boilerplate.
 
-**PostgreSQL** — relational data with foreign keys is the right fit here. The relationship between businesses and their risk history is a natural one-to-many, and SQL makes querying and filtering that straightforward. It's also very popular -- online documentation is abundant.
+**PostgreSQL** — relational data with foreign keys is the right fit here. The relationship between businesses and their risk history is a natural one-to-many, and SQL makes querying and filtering that straightforward.
 
 **SQLAlchemy + Alembic** — SQLAlchemy's ORM keeps database access Pythonic and testable. Alembic handles schema migrations so the database evolves safely as the schema changes — migrations run automatically on container startup.
 
 **React + Vite + TypeScript** — Vite's dev server starts instantly and has first-class HMR support, which makes frontend iteration fast. TypeScript keeps the API contract between frontend and backend explicit and catches mismatches at compile time.
 
-**Docker Compose** — all four services (frontend, backend, PostgreSQL, pgAdmin) start with a single command. The backend mounts source as a volume so code changes hot-reload without rebuilding the image. Also makes it seamless for any developer to get their environment working. 
+**Docker Compose** — all four services (frontend, backend, PostgreSQL, pgAdmin) start with a single command. The backend mounts source as a volume so code changes hot-reload without rebuilding the image.
+
+**Cloud deployment** — since everything is containerized, hosting on GCP Cloud Run is a natural next step. Cloud Run is fully managed — no cluster to maintain — and Cloud SQL would replace the local postgres container as the managed database. 
