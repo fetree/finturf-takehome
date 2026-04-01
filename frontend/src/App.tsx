@@ -1,90 +1,37 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import BusinessList from "./components/BusinessList";
+import BusinessDetail from "./components/BusinessDetail";
 
-interface Item {
-  id: number;
-  name: string;
-  description: string | null;
-}
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+type View = { page: "list" } | { page: "detail"; id: number };
 
 export default function App() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-
-  const fetchItems = async () => {
-    const res = await fetch(`${API_BASE}/items/`);
-    setItems(await res.json());
-  };
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch(`${API_BASE}/items/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description }),
-    });
-    setName("");
-    setDescription("");
-    fetchItems();
-  };
-
-  const handleDelete = async (id: number) => {
-    await fetch(`${API_BASE}/items/${id}`, { method: "DELETE" });
-    fetchItems();
-  };
+  const [view, setView] = useState<View>({ page: "list" });
 
   return (
-    <div style={{ maxWidth: 600, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Finturf</h1>
-
-      <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-        <div style={{ marginBottom: 8 }}>
-          <input
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={{ marginRight: 8, padding: 6 }}
+    <div style={styles.root}>
+      <nav style={styles.nav}>
+        <span style={styles.navBrand} onClick={() => setView({ page: "list" })}>
+          Finturf
+        </span>
+      </nav>
+      <main style={styles.main}>
+        {view.page === "list" && (
+          <BusinessList onSelect={(id) => setView({ page: "detail", id })} />
+        )}
+        {view.page === "detail" && (
+          <BusinessDetail
+            id={view.id}
+            onBack={() => setView({ page: "list" })}
           />
-          <input
-            placeholder="Description (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            style={{ marginRight: 8, padding: 6 }}
-          />
-          <button type="submit">Add</button>
-        </div>
-      </form>
-
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {items.map((item) => (
-          <li
-            key={item.id}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "8px 0",
-              borderBottom: "1px solid #eee",
-            }}
-          >
-            <span>
-              <strong>{item.name}</strong>
-              {item.description && (
-                <span style={{ color: "#666", marginLeft: 8 }}>
-                  {item.description}
-                </span>
-              )}
-            </span>
-            <button onClick={() => handleDelete(item.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+        )}
+      </main>
     </div>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  root: { minHeight: "100vh", background: "#f8fafc", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  nav: { background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "0 32px", height: 56, display: "flex", alignItems: "center" },
+  navBrand: { fontSize: 18, fontWeight: 700, color: "#2563eb", cursor: "pointer", letterSpacing: "-0.02em" },
+  main: { maxWidth: 960, margin: "0 auto", padding: "32px 24px" },
+};
