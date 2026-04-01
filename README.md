@@ -160,14 +160,14 @@ The evaluation logic lives in `services/risk_evaluator.py` and is intentionally 
 
 ## Technology Choices
 
-**FastAPI** — required by the spec. Its automatic OpenAPI docs (`/docs`) made iterating on the API much faster during development, and Pydantic integration means request validation is handled declaratively with no boilerplate.
+**FastAPI** — required by the spec. Its automatic OpenAPI docs (`/docs`) made iterating on the API faster, and Pydantic integration means request validation is declarative with no boilerplate. The tradeoff vs something like Django is that FastAPI is more minimal — you wire up what you need rather than getting batteries included. For a focused API like this, that's the right call.
 
-**PostgreSQL** — relational data with foreign keys is the right fit here. The relationship between businesses and their risk history is a natural one-to-many, and SQL makes querying and filtering that straightforward.
+**PostgreSQL** — the relationship between businesses and their risk history is a natural one-to-many, and SQL makes filtering and joining that data straightforward. A NoSQL store like MongoDB could work but you'd lose referential integrity between businesses and their evaluations, which matters in a compliance-sensitive context like KYB.
 
-**SQLAlchemy + Alembic** — SQLAlchemy's ORM keeps database access Pythonic and testable. Alembic handles schema migrations so the database evolves safely as the schema changes — migrations run automatically on container startup.
+**SQLAlchemy + Alembic** — SQLAlchemy's ORM keeps database access Pythonic and testable. Alembic handles schema migrations so the schema evolves safely as requirements change — migrations run automatically on container startup. The alternative was using a lighter query builder like `databases`, but Alembic's migration tooling was the deciding factor.
 
-**React + Vite + TypeScript** — Vite's dev server starts instantly and has first-class HMR support, which makes frontend iteration fast. TypeScript keeps the API contract between frontend and backend explicit and catches mismatches at compile time.
+**Three-layer backend architecture** — routers, services, and schemas are kept strictly separate. A repository layer was considered but skipped — it adds indirection without much payoff at this scale. If the query complexity grew (e.g. complex joins, multiple data sources), introducing a repository layer would be the natural next step.
 
-**Docker Compose** — all four services (frontend, backend, PostgreSQL, pgAdmin) start with a single command. The backend mounts source as a volume so code changes hot-reload without rebuilding the image.
+**React + Vite + TypeScript** — Vite's dev server has first-class HMR support, which matters when iterating quickly. TypeScript keeps the API contract between frontend and backend explicit — if a field changes on the backend schema, the type error surfaces immediately in the frontend rather than at runtime.
 
-**Cloud deployment** — since everything is containerized, hosting on GCP Cloud Run is a natural next step. Cloud Run is fully managed — no cluster to maintain — and Cloud SQL would replace the local postgres container as the managed database. 
+**Docker Compose** — all four services (frontend, backend, PostgreSQL, pgAdmin) start with a single command. The dev setup uses volume mounts for hot reloading rather than rebuilding the image on every change. The tradeoff is that the `docker-compose.yml` is optimized for development, not production — in prod each service would be deployed independently to Cloud Run with Cloud SQL replacing the local postgres container. 
