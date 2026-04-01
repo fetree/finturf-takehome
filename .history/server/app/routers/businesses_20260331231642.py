@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.business import BusinessCreate, BusinessDetailResponse, BusinessFilters, BusinessResponse, RiskResponse
+from app.schemas.business import BusinessCreate, BusinessDetailResponse, BusinessFilters, BusinessResponse
 from app.services import business_service
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
@@ -13,9 +13,17 @@ def list_businesses(
     name: str | None = Query(None, description="Partial name match"),
     state: str | None = Query(None),
     business_type: str | None = Query(None),
+    min_monthly_revenue: float | None = Query(None),
+    max_monthly_revenue: float | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    filters = BusinessFilters(name=name, state=state, business_type=business_type)
+    filters = BusinessFilters(
+        name=name,
+        state=state,
+        business_type=business_type,
+        min_monthly_revenue=min_monthly_revenue,
+        max_monthly_revenue=max_monthly_revenue,
+    )
     return business_service.get_businesses(db, filters)
 
 
@@ -25,22 +33,6 @@ def get_business(business_id: int, db: Session = Depends(get_db)):
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     return business
-
-
-@router.get("/{business_id}/risk-history", response_model=list[RiskResponse])
-def get_risk_history(business_id: int, db: Session = Depends(get_db)):
-    history = business_service.get_risk_history(db, business_id)
-    if history is None:
-        raise HTTPException(status_code=404, detail="Business not found")
-    return history
-
-
-@router.post("/{business_id}/evaluate", response_model=RiskResponse)
-def evaluate_business(business_id: int, db: Session = Depends(get_db)):
-    risk = business_service.evaluate_business(db, business_id)
-    if not risk:
-        raise HTTPException(status_code=404, detail="Business not found")
-    return risk
 
 
 @router.post("/", response_model=BusinessResponse, status_code=201)

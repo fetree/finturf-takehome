@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,10 +15,16 @@ class Business(Base):
     business_type: Mapped[str | None] = mapped_column(String, nullable=True)
     state: Mapped[str | None] = mapped_column(String, nullable=True)
     website: Mapped[str | None] = mapped_column(String, nullable=True)
-    date_founded: Mapped[str | None] = mapped_column(Date, nullable=True)
+    years_in_business: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Financials
+    monthly_revenue: Mapped[float | None] = mapped_column(Float, nullable=True)
+    num_employees: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    outstanding_debt: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Owner
     owner_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    owner_credit_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
 
@@ -32,14 +38,6 @@ class BusinessRisk(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     business_id: Mapped[int] = mapped_column(Integer, ForeignKey("businesses.id"), nullable=False, index=True)
-
-    # Snapshot at time of evaluation
-    monthly_revenue: Mapped[float | None] = mapped_column(Float, nullable=True)
-    outstanding_debt: Mapped[float | None] = mapped_column(Float, nullable=True)
-    num_employees: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    owner_credit_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
-
-    # Evaluation results
     is_real: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     risk_tier: Mapped[str | None] = mapped_column(String, nullable=True)
